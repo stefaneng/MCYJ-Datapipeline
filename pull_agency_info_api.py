@@ -142,19 +142,20 @@ def merge_agency_info(agency_csv, output_dir = ".", remove_files=False):
     # Merge PDF content details for each agency
 
     combined_rows = []
+    header = []
     for agency_id in agency_ids:
         pdf_csv = os.path.join(output_dir, f"{agency_id}_pdf_content_details.csv")
         if os.path.exists(pdf_csv):
             with open(pdf_csv, mode='r', encoding='utf-8') as f:
                 reader = csv.reader(f)
                 header = next(reader)
+                missing_agency_id = 'agency_id' not in header
                 # Only add agency_id if not already present in header
-                if 'agency_id' not in header:
+                if missing_agency_id:
                     header = ['agency_id'] + header
                 for row in reader:
-                    combined_rows.append([agency_id] + row if 'agency_id' not in header else row)
+                    combined_rows.append([agency_id] + row if missing_agency_id else row)
         else:
-            # Warning:
             print(f"Warning: PDF content details CSV not found for agency ID {agency_id}, skipping...")
             continue
 
@@ -184,8 +185,15 @@ def merge_agency_info(agency_csv, output_dir = ".", remove_files=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download Child Welfare Licensing agency PDFs from Michigan's public licensing search.")
     parser.add_argument("--output-dir", dest="output_dir", help="Directory to save the CSV and JSON files", default="./")
+    parser.add_argument("--overwrite", dest="overwrite", help="Overwrite existing files", default=True)
+    parser.add_argument("--remove-files", dest="remove_files", help="Remove individual agency files after merging", default=True)
+    parser.add_argument("--verbose", dest="verbose", help="Enable verbose output", default=False, action='store_true')
     args = parser.parse_args()
     output_dir = args.output_dir
+
+    # # Patch all print statements in functions
+    # builtins.print = lambda *a, **kw: log_print(' '.join(str(x) for x in a), logging.INFO)
+
     os.makedirs(output_dir, exist_ok=True)
 
     all_agency_info = get_all_agency_info()
@@ -195,6 +203,7 @@ if __name__ == "__main__":
 
     with open(agency_file, "w", encoding="utf-8") as f:
         json.dump(all_agency_info, f, indent=2, ensure_ascii=False)
+
     print("All agency information saved to all_agency_info.json")
 
     # Extract the list from all_agency_info
@@ -222,22 +231,26 @@ if __name__ == "__main__":
     ]
 
     # Update CSV filename to include date
-    csv_file = os.path.join(output_dir, f"{date_str}_agency_info.csv")
-    with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
+    agency_csv_file = os.path.join(output_dir, f"{date_str}_agency_info.csv")
+    with open(agency_csv_file, mode='w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=keep_cols, quoting=csv.QUOTE_ALL)
         writer.writeheader()
         for agency in agency_list:
             row = {col: agency.get(col, "") for col in keep_cols}
             writer.writerow(row)
-    print(f"Agency info written to {csv_file}")
+    print(f"Agency info written to {agency_csv_file}")
 
     keep_cols = ['FileExtension', 'CreatedDate', 'Title', 'ContentBodyId', 'Id', 'ContentDocumentId']
 
     # Run for each agency id
     for agency in agency_list:
         record_id = agency.get('agencyId')
+        csv_file = os.path.join(output_dir, f"{record_id}_pdf_content_details.csv")
         if not record_id:
-            print("No agency ID found, skipping...")
+            print(f"Skipping agency ID {record_id} as it is empty.")
+            continue
+        if args.overwrite and os.path.exists(csv_file):
+            print(f"File {csv_file} already exists and overwrite is enabled, skipping agency ID {record_id}.")
             continue
 
         print(f"Processing agency ID: {record_id}")
@@ -266,4 +279,4 @@ if __name__ == "__main__":
         else:
             print(f"Failed to retrieve PDF content details for agency ID: {record_id}")
 
-    merge_agency_info(csv_file, output_dir, remove_files=True)
+    merge_agency_info(agency_csv_file, output_dir, remove_files=args.remove_files)
