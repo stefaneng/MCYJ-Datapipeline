@@ -17,6 +17,7 @@ python3 generate_website_data.py \
   --sir-summaries-csv ../pdf_parsing/sir_summaries.csv \
   --sir-violation-levels-csv ../pdf_parsing/sir_violation_levels.csv \
   --keyword-reduction-csv ../pdf_parsing/violation_curation_keyword_reduction.csv \
+  --facility-info-csv ../facility_information/facility_information.csv \
   --output-dir public/data
 
 echo ""

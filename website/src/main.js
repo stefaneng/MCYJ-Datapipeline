@@ -6,6 +6,9 @@ import { Trie } from './trie.js';
 const DOM_READY_DELAY = 100; // Delay in ms to ensure DOM is ready for operations
 const BASE_URL = import.meta.env.BASE_URL || '/';
 
+// Active license statuses (facilities with these statuses are considered "active")
+const ACTIVE_LICENSE_STATUSES = ['Regular', 'Original', '1st Provisional', '2nd Provisional', 'Inspected'];
+
 let allAgencies = [];
 let filteredAgencies = [];
 let currentOpenAgencyId = null;
@@ -16,13 +19,22 @@ let apiKey = null; // Store decrypted API key
 let filters = {
     sirOnly: true, // Enable SIR-only by default
     keywords: [], // Multiple selected keywords (OR semantics)
-    agency: null // Single selected agency (agencyId)
+    agency: null, // Single selected agency (agencyId)
+    activeLicenseOnly: true, // Only show agencies with active license by default
+    licenseStatus: null, // Filter by specific license status
+    agencyType: null, // Filter by agency type
+    county: null // Filter by county
 };
 
 let keywordTrie = new Trie();
 let agencyTrie = new Trie();
 let allKeywords = new Set();
 let agencyIdMap = new Map(); // Maps lowercase agency text to original agencyId
+
+// Unique values for facility filters
+let uniqueLicenseStatuses = [];
+let uniqueAgencyTypes = [];
+let uniqueCounties = [];
 
 // Load and display data
 async function init() {
@@ -41,6 +53,9 @@ async function init() {
         
         // Build agency trie from all agencies
         buildAgencyTrie();
+        
+        // Build unique values for facility filters
+        buildFacilityFilterOptions();
 
         hideLoading();
         displayStats();
@@ -48,11 +63,14 @@ async function init() {
         setupFilters();
         setupKeywordFilter();
         setupAgencyFilter();
+        setupFacilityFilters();
         
-        // Apply filters to respect default settings (SIR-only is enabled by default)
+        // Handle URL query string before applying filters to capture facility filter params
+        handleUrlQueryString();
+        
+        // Apply filters to respect default settings (SIR-only and active license by default)
         applyFilters();
         
-        handleUrlQueryString();
         handleQueryStringDocument();
         
         // Set commit hash
@@ -104,6 +122,41 @@ function applyFilters() {
             selectedAgencyId = agencies[0].agencyId;
         }
     }
+    
+    // Apply facility-level filters (filter agencies based on their facility info)
+    agencies = agencies.filter(agency => {
+        const facility = agency.facility;
+        
+        // Filter by active license only
+        if (filters.activeLicenseOnly) {
+            if (!facility || !ACTIVE_LICENSE_STATUSES.includes(facility.LicenseStatus)) {
+                return false;
+            }
+        }
+        
+        // Filter by specific license status
+        if (filters.licenseStatus) {
+            if (!facility || facility.LicenseStatus !== filters.licenseStatus) {
+                return false;
+            }
+        }
+        
+        // Filter by agency type
+        if (filters.agencyType) {
+            if (!facility || facility.AgencyType !== filters.agencyType) {
+                return false;
+            }
+        }
+        
+        // Filter by county
+        if (filters.county) {
+            if (!facility || facility.County !== filters.county) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
     
     // Apply filters to each agency's documents
     agencies = agencies.map(agency => {
@@ -173,6 +226,111 @@ function setupFilters() {
         filters.sirOnly = e.target.checked;
         applyFilters();
     });
+    
+    // Active license only filter
+    const activeLicenseCheckbox = document.getElementById('filterActiveLicenseOnly');
+    if (activeLicenseCheckbox) {
+        activeLicenseCheckbox.addEventListener('change', (e) => {
+            filters.activeLicenseOnly = e.target.checked;
+            applyFilters();
+        });
+    }
+}
+
+function buildFacilityFilterOptions() {
+    // Build unique values for facility filters from agencies
+    const licenseStatuses = new Set();
+    const agencyTypes = new Set();
+    const counties = new Set();
+    
+    allAgencies.forEach(agency => {
+        if (agency.facility) {
+            if (agency.facility.LicenseStatus) {
+                licenseStatuses.add(agency.facility.LicenseStatus);
+            }
+            if (agency.facility.AgencyType) {
+                agencyTypes.add(agency.facility.AgencyType);
+            }
+            if (agency.facility.County) {
+                counties.add(agency.facility.County);
+            }
+        }
+    });
+    
+    uniqueLicenseStatuses = Array.from(licenseStatuses).sort();
+    uniqueAgencyTypes = Array.from(agencyTypes).sort();
+    uniqueCounties = Array.from(counties).sort();
+}
+
+function setupFacilityFilters() {
+    // Setup License Status filter
+    const licenseStatusSelect = document.getElementById('filterLicenseStatus');
+    if (licenseStatusSelect) {
+        // Populate options
+        licenseStatusSelect.innerHTML = '<option value="">All Statuses</option>' +
+            uniqueLicenseStatuses.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        
+        licenseStatusSelect.addEventListener('change', (e) => {
+            filters.licenseStatus = e.target.value || null;
+            updateUrlWithFacilityFilters();
+            applyFilters();
+        });
+    }
+    
+    // Setup Agency Type filter
+    const agencyTypeSelect = document.getElementById('filterAgencyType');
+    if (agencyTypeSelect) {
+        // Populate options
+        agencyTypeSelect.innerHTML = '<option value="">All Types</option>' +
+            uniqueAgencyTypes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+        
+        agencyTypeSelect.addEventListener('change', (e) => {
+            filters.agencyType = e.target.value || null;
+            updateUrlWithFacilityFilters();
+            applyFilters();
+        });
+    }
+    
+    // Setup County filter
+    const countySelect = document.getElementById('filterCounty');
+    if (countySelect) {
+        // Populate options
+        countySelect.innerHTML = '<option value="">All Counties</option>' +
+            uniqueCounties.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        
+        countySelect.addEventListener('change', (e) => {
+            filters.county = e.target.value || null;
+            updateUrlWithFacilityFilters();
+            applyFilters();
+        });
+    }
+}
+
+function updateUrlWithFacilityFilters() {
+    const url = new URL(window.location);
+    
+    // Update License Status
+    if (filters.licenseStatus) {
+        url.searchParams.set('licensestatus', filters.licenseStatus);
+    } else {
+        url.searchParams.delete('licensestatus');
+    }
+    
+    // Update Agency Type
+    if (filters.agencyType) {
+        url.searchParams.set('agencytype', filters.agencyType);
+    } else {
+        url.searchParams.delete('agencytype');
+    }
+    
+    // Update County
+    if (filters.county) {
+        url.searchParams.set('county', filters.county);
+    } else {
+        url.searchParams.delete('county');
+    }
+    
+    window.history.pushState({}, '', url);
 }
 
 function buildKeywordTrie() {
@@ -986,6 +1144,11 @@ function handleUrlQueryString() {
     const keywordsParam = urlParams.get('keywords');
     const legacyKeyword = urlParams.get('keyword'); // Support old single keyword param
     
+    // Handle facility filter params
+    const licenseStatusParam = urlParams.get('licensestatus');
+    const agencyTypeParam = urlParams.get('agencytype');
+    const countyParam = urlParams.get('county');
+    
     if (agencyId) {
         // Find the agency
         const agency = allAgencies.find(a => a.agencyId === agencyId);
@@ -996,19 +1159,49 @@ function handleUrlQueryString() {
         }
     }
     
+    // Handle facility filters from URL
+    if (licenseStatusParam) {
+        filters.licenseStatus = licenseStatusParam;
+        // Disable active license filter when a specific license status is selected
+        // This is because the user explicitly chose a status
+        filters.activeLicenseOnly = false;
+        const activeLicenseCheckbox = document.getElementById('filterActiveLicenseOnly');
+        if (activeLicenseCheckbox) {
+            activeLicenseCheckbox.checked = false;
+        }
+        const licenseStatusSelect = document.getElementById('filterLicenseStatus');
+        if (licenseStatusSelect) {
+            licenseStatusSelect.value = licenseStatusParam;
+        }
+    }
+    
+    if (agencyTypeParam) {
+        filters.agencyType = agencyTypeParam;
+        const agencyTypeSelect = document.getElementById('filterAgencyType');
+        if (agencyTypeSelect) {
+            agencyTypeSelect.value = agencyTypeParam;
+        }
+    }
+    
+    if (countyParam) {
+        filters.county = countyParam;
+        const countySelect = document.getElementById('filterCounty');
+        if (countySelect) {
+            countySelect.value = countyParam;
+        }
+    }
+    
     // Handle multiple keywords (new format)
     // URLSearchParams automatically decodes URL-encoded values
     if (keywordsParam) {
         const keywords = keywordsParam.split(',').map(k => k.trim()).filter(k => k.length > 0);
         filters.keywords = keywords;
         renderSelectedKeywords();
-        applyFilters();
     }
     // Handle legacy single keyword (old format)
     else if (legacyKeyword) {
         filters.keywords = [legacyKeyword];
         renderSelectedKeywords();
-        applyFilters();
     }
 }
 

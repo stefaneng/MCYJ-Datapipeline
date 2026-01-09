@@ -15,7 +15,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         keywords: resolve(__dirname, 'keywords.html'),
-        document: resolve(__dirname, 'document.html')
+        document: resolve(__dirname, 'document.html'),
+        facilities: resolve(__dirname, 'facilities.html')
       }
     }
   },

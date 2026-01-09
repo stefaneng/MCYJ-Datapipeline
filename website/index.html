@@ -649,6 +649,47 @@
                 </div>
                 
                 <div style="border-top: 1px solid #ddd; padding-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="filterActiveLicenseOnly" style="cursor: pointer;" checked>
+                        <span>Active License Only</span>
+                    </label>
+                    <p style="color: #666; font-size: 0.8em; margin-top: 4px; margin-left: 24px;">
+                        Limits results to agencies with Regular, Original, Provisional, or Inspected license status
+                    </p>
+                </div>
+                
+                <div style="border-top: 1px solid #ddd; padding-top: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">
+                        🏢 Filter by Facility Attributes
+                    </label>
+                    <div style="display: grid; gap: 10px;">
+                        <div>
+                            <label for="filterLicenseStatus" style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #666;">License Status:</label>
+                            <select id="filterLicenseStatus" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">All Statuses</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterAgencyType" style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #666;">Agency Type:</label>
+                            <select id="filterAgencyType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">All Types</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterCounty" style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #666;">County:</label>
+                            <select id="filterCounty" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">All Counties</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <a href="facilities.html" style="color: #3498db; text-decoration: none; font-size: 0.9em;">
+                            📊 View Facility Statistics
+                        </a>
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px solid #ddd; padding-top: 15px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">
                         🏷️ Filter by Keywords (OR)
                     </label>

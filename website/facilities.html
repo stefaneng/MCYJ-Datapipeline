@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facility Statistics - Michigan Child Welfare Licensing Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .facilities-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .facilities-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .facilities-header h2 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+        
+        .facilities-description {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .grouping-selector {
+            margin-bottom: 25px;
+        }
+        
+        .grouping-selector label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-right: 10px;
+        }
+        
+        .grouping-selector select {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+        
+        .grouping-selector select:hover {
+            border-color: #3498db;
+        }
+        
+        .stats-summary {
+            background: #e8f4f8;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            color: #2c3e50;
+        }
+        
+        /* Bar Chart Styles */
+        .bar-chart {
+            margin-top: 20px;
+        }
+
+        .bar-chart-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .bar-chart-container {
+            display: grid;
+            grid-template-columns: minmax(150px, auto) 1fr auto;
+            gap: 8px 10px;
+            align-items: center;
+        }
+
+        .bar-chart-row {
+            display: contents;
+        }
+
+        .bar-chart-label {
+            font-size: 0.9em;
+            color: #333;
+            text-align: right;
+            word-break: break-word;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .bar-chart-label:hover {
+            color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .bar-chart-bar-container {
+            height: 28px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-chart-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            min-width: 2px;
+        }
+
+        .bar-chart-count {
+            flex: 0 0 50px;
+            font-size: 0.9em;
+            color: #666;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .bar-chart-container {
+                grid-template-columns: minmax(100px, auto) 1fr auto;
+                gap: 6px 8px;
+            }
+
+            .bar-chart-label {
+                font-size: 0.8em;
+            }
+
+            .bar-chart-count {
+                font-size: 0.8em;
+            }
+
+            .bar-chart-bar-container {
+                height: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bar-chart-container {
+                gap: 5px 6px;
+            }
+
+            .bar-chart-label {
+                font-size: 0.75em;
+            }
+
+            .bar-chart-count {
+                font-size: 0.75em;
+            }
+
+            .bar-chart-bar-container {
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Facility Statistics</h1>
+            <p class="subtitle">Active Licensed Facilities by Grouping</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Dashboard</a>
+        
+        <div class="facilities-container">
+            <div class="facilities-header">
+                <h2>🏢 Facility Counts by Grouping</h2>
+                <p class="facilities-description">
+                    This page shows counts of facilities with active licenses, grouped by various attributes.
+                    Click on any group to view the corresponding agencies in the main dashboard.
+                </p>
+            </div>
+            
+            <div class="grouping-selector">
+                <label for="groupingSelect">Group by:</label>
+                <select id="groupingSelect">
+                    <option value="LicenseStatus">License Status</option>
+                    <option value="AgencyType">Agency Type</option>
+                    <option value="County">County</option>
+                </select>
+            </div>
+            
+            <div id="statsSummary" class="stats-summary">
+                Loading facility data...
+            </div>
+            
+            <div id="loading" class="loading">Loading data...</div>
+            
+            <div id="barChart" class="bar-chart" style="display: none;">
+                <div class="bar-chart-title" id="chartTitle">Facilities by License Status</div>
+                <div id="barChartContainer" class="bar-chart-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/src/facilities.js"></script>
+</body>
+</html>
