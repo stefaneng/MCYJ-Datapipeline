@@ -468,7 +468,7 @@ export function App() {
             </div>
             
             <div id="commitHash" style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '0.8em', fontFamily: 'monospace' }}>
-                Version: __COMMIT_HASH__
+                Version: {__COMMIT_HASH__}
             </div>
         </>
     );

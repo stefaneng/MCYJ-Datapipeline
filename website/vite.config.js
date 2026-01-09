@@ -7,9 +7,18 @@ import react from '@vitejs/plugin-react'
 // For Netlify, the default '/' works correctly
 const base = process.env.VITE_BASE_URL || '/'
 
+// Get commit hash from environment variable
+// - VITE_COMMIT_HASH: set by GitHub Actions workflow
+// - COMMIT_REF: provided by Netlify
+// - 'dev': fallback for local builds
+const commitHash = process.env.VITE_COMMIT_HASH || process.env.COMMIT_REF || 'dev'
+
 export default defineConfig({
   base,
   plugins: [react()],
+  define: {
+    __COMMIT_HASH__: JSON.stringify(commitHash)
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,

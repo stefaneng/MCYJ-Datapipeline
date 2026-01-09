@@ -56,6 +56,7 @@ jobs:
             --sir-summaries-csv ../pdf_parsing/sir_summaries.csv \
             --sir-violation-levels-csv ../pdf_parsing/sir_violation_levels.csv \
             --keyword-reduction-csv ../pdf_parsing/violation_curation_keyword_reduction.csv \
+            --facility-info-csv ../facility_information/facility_information.csv \
             --output-dir public/data
 
       - name: Export parquet documents to JSON
@@ -75,6 +76,7 @@ jobs:
           npm run build
         env:
           VITE_BASE_URL: /MCYJ-Datapipeline/
+          VITE_COMMIT_HASH: ${{ github.sha }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
