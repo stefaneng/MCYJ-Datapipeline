@@ -1,6 +1,6 @@
 # Michigan Child Welfare Licensing Dashboard
 
-A lightweight web dashboard built with Vite to display Michigan Child Welfare agency documents and reports.  Live [here](https://scintillating-licorice-0dd1c4.netlify.app/).
+A lightweight web dashboard built with Vite to display Michigan Child Welfare agency documents and reports.  Main is live [here](https://statcom-um.github.io/MCYJ-Datapipeline/) and production is live [here](https://statcom-mcyj-datapipeline.netlify.app/).
 
 ## Features
 
