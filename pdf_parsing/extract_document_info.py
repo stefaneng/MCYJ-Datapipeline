@@ -179,7 +179,8 @@ def extract_inspection_date(text: str) -> Optional[str]:
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            date_str = match.group(1) if pattern.count('(') > 1 else match.group(0)
+            # Use capturing group if available, otherwise use full match
+            date_str = match.group(1) if match.lastindex and match.lastindex >= 1 else match.group(0)
             date_str = date_str.strip()
             # Clean up date string
             date_str = re.sub(r'\s+', ' ', date_str)

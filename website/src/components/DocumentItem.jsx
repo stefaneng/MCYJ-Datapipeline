@@ -132,7 +132,7 @@ export function DocumentList({ documents, filteredOutCount = 0, baseUrl, onCopyL
 
     // Sort by date (most recent first)
     const sortedDocuments = [...documents].sort((a, b) => {
-        return new Date(b.date_processed) - new Date(a.date_processed);
+        return new Date(b.date) - new Date(a.date);
     });
 
     return (

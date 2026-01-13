@@ -56,7 +56,8 @@ export function DocumentPage() {
                                     title: doc.document_title || doc.agency_name || 'Untitled Document',
                                     is_special_investigation: doc.is_special_investigation || false,
                                     agencyName: agency.AgencyName,
-                                    agencyId: agency.agencyId
+                                    agencyId: agency.agencyId,
+                                    date: doc.date
                                 });
                                 break;
                             }
@@ -253,7 +254,9 @@ export function DocumentPage() {
                                 )}
                             </div>
                             <div><strong>Document ID (SHA-256):</strong> <code style={{ wordBreak: 'break-all' }}>{documentData.sha256}</code></div>
-                            <div><strong>Date Processed:</strong> {documentData.dateprocessed}</div>
+                            {docMetadata?.date && (
+                                <div><strong>Report Date:</strong> {docMetadata.date}</div>
+                            )}
                             <div><strong>Total Pages:</strong> {documentData.pages?.length || 0}</div>
                         </div>
                         
