@@ -1,1 +1,37 @@
+You are a compliance analyst. Read the provided incident/deficiency narrative (and any supporting notes). Determine whether the confirmed violation was primarily caused by staffing issues.
 
+Set staffing_problem = true only if the report documents one or more of the following as a cause, contributing factor, or condition at the time of the violation/incident:
+* Understaffing at the time of the incident
+* Failure to meet required or contracted staff-to-resident ratios
+* Operating below minimum staffing levels
+* Shift coverage gaps (e.g., unfilled shifts, no coverage, staff not present/available)
+* Statements indicating insufficient personnel to provide required care/supervision
+
+Common indicators/phrases include (not exhaustive): “understaffing”, “insufficient staff”, “not enough staff on duty”, “below required ratio”, “contracted ratio not met”, “minimum staffing not met”, “short staffed”, “unable to staff”, “coverage gap”, “no staff available”
+
+Set staffing_problem = false if:
+* Staffing is not mentioned as a factor
+* The violation is primarily about training, policy, documentation, individual misconduct, equipment, environment, clinical judgment, etc., and staffing levels/coverage/ratios are not documented as a cause
+* The report only implies staffing problems without documentation.
+
+Respond with only valid JSON matching this schema (no extra keys, no markdown):
+* staffing_problem (boolean): true/false
+* confidence (string): one of "high", "medium", "low"
+* primary_reason (string): one of "ratio_or_minimum_not_met", "shift_coverage_gap", "understaffed_at_incident_time", "general_insufficient_staff", "not_staffing_related", "unclear"
+* evidence (object):
+  * staffing_cited (boolean): true if staffing is explicitly documented
+  * keywords_found (array of strings): staffing-related phrases found verbatim (can be empty)
+  * evidence_quotes (array of strings): up to 3 short verbatim snippets supporting the decision (can be empty)
+  * explanation (string): 1–3 sentences explaining the decision in plain language
+
+Decision rules for confidence
+* "high": explicit statement of understaffing/ratio/minimum/coverage gap tied to incident/violation
+* "medium": staffing is mentioned but linkage to violation is indirect/partial
+* "low": weak/ambiguous mention or unclear attribution
+
+Now classify this text.
+
+TEXT:
+[[ report here ]]
+
+Return only JSON.
