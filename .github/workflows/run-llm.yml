@@ -2,6 +2,12 @@ name: Run LLM
 
 on:
   workflow_dispatch:
+    inputs:
+      max_docs:
+        description: 'Maximum number of documents to process per LLM step'
+        required: false
+        default: '100'
+        type: number
 
 permissions:
   contents: write
@@ -29,17 +35,17 @@ jobs:
         run: uv pip install --system -e .
 
       - name: Run update_sir_summaries.py
-        run: python3 pdf_parsing/update_sir_summaries.py
+        run: python3 pdf_parsing/update_sir_summaries.py --count ${{ inputs.max_docs }}
         env:
           OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
 
       - name: Run update_violation_levels.py
-        run: python3 pdf_parsing/update_violation_levels.py
+        run: python3 pdf_parsing/update_violation_levels.py --max-count ${{ inputs.max_docs }}
         env:
           OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
 
       - name: Run update_staffing_summaries.py
-        run: python3 pdf_parsing/update_staffing_summaries.py
+        run: python3 pdf_parsing/update_staffing_summaries.py --max-count ${{ inputs.max_docs }}
         env:
           OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
 
