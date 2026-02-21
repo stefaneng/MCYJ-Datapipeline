@@ -47,11 +47,10 @@ You can run the same pipeline from GitHub:
 
 The workflow will:
 - run `run_full_pipeline.py` with your limit
-- upload artifacts:
-  - `metadata_output/latest_downloaded_metadata.csv`
+- create a PR committing pipeline outputs directly to the repo:
   - `metadata_output/downloaded_files_database.csv`
-  - latest parquet file from `pdf_parsing/parquet_files/` (when available)
-- optionally create a PR updating `metadata_output/downloaded_files_database.csv`
+  - `metadata_output/latest_downloaded_metadata.csv`
+  - new parquet files in `pdf_parsing/parquet_files/`
 
 This lets you test exactly the same behavior from GitHub, including the "download only new ContentDocumentId values" logic.
 
