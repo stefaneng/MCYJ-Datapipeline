@@ -34,10 +34,17 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_sha256(file_path: str) -> str:
-    """Calculate SHA256 hash of a file using file_digest."""
+    """Calculate SHA256 hash of a file with broad Python-version compatibility."""
     with open(file_path, "rb") as f:
-        digest = hashlib.file_digest(f, "sha256")
-    return digest.hexdigest()
+        if hasattr(hashlib, "file_digest"):
+            digest = hashlib.file_digest(f, "sha256")
+            return digest.hexdigest()
+
+        # Fallback for Python versions without hashlib.file_digest (e.g., 3.9)
+        hasher = hashlib.sha256()
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            hasher.update(chunk)
+        return hasher.hexdigest()
 
 
 def load_processed_ids(parquet_dir: str) -> Set[str]:

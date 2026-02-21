@@ -9,6 +9,7 @@ python run_full_pipeline.py --metadata-output-dir metadata_output --download-dir
 ```
 
 This script discovers and downloads incrementally: it checks each API file and downloads immediately when a new `ContentDocumentId` is found.
+After downloading, it runs PDF text extraction for newly downloaded files and writes parquet output in `pdf_parsing/parquet_files`.
 By default, it writes:
 - persistent download database: `metadata_output/downloaded_files_database.csv`
 - run-only metadata (new downloads only): `metadata_output/latest_downloaded_metadata.csv`
@@ -49,9 +50,16 @@ The workflow will:
 - upload artifacts:
   - `metadata_output/latest_downloaded_metadata.csv`
   - `metadata_output/downloaded_files_database.csv`
+  - latest parquet file from `pdf_parsing/parquet_files/` (when available)
 - optionally create a PR updating `metadata_output/downloaded_files_database.csv`
 
 This lets you test exactly the same behavior from GitHub, including the "download only new ContentDocumentId values" logic.
+
+To skip parsing (download-only mode), add:
+
+```bash
+python run_full_pipeline.py --skip-pdf-parsing
+```
 
 ## 1. Get all the available documents from the Michigan Welfare public search API
 

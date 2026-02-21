@@ -7,17 +7,21 @@ Pipeline steps:
 2) Fetch agency list from API
 3) Iterate agency content details and download immediately when a new file is found
 4) Stop after --limit newly downloaded files (limit counts new downloads only)
-5) Write cumulative metadata CSV and run-specific metadata output CSV
+5) Parse newly downloaded PDFs to parquet text (pdf_parsing)
+6) Write cumulative metadata CSV and run-specific metadata output CSV
 """
 
 import argparse
 import csv
 import hashlib
 import os
+import shutil
+import tempfile
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from download_pdf import download_michigan_pdf
+from pdf_parsing.extract_pdf_text import process_directory as process_pdf_directory
 from pull_agency_info_api import get_all_agency_info, get_content_details_method
 
 
@@ -26,6 +30,7 @@ DEFAULT_DOWNLOAD_DIR = "Downloads"
 DEFAULT_METADATA_FILENAME = "facility_information_metadata.csv"
 DEFAULT_RUN_OUTPUT_FILENAME = "latest_downloaded_metadata.csv"
 DEFAULT_DOWNLOAD_DB_FILENAME = "downloaded_files_database.csv"
+DEFAULT_PARQUET_DIR = "pdf_parsing/parquet_files"
 
 
 def load_csv_rows(csv_path: str) -> List[Dict[str, str]]:
@@ -166,6 +171,34 @@ def write_csv_rows(csv_path: str, rows: List[Dict[str, str]]) -> None:
             writer.writerow({k: row.get(k, "") for k in fieldnames})
 
 
+def parse_new_downloads_to_parquet(new_rows: List[Dict[str, str]], parquet_dir: str) -> None:
+    """Parse newly downloaded PDFs into parquet by staging only this run's files."""
+    if not new_rows:
+        print("No new downloads in this run; skipping PDF parsing step.")
+        return
+
+    with tempfile.TemporaryDirectory(prefix="mcyj_new_downloads_") as staging_dir:
+        staged_count = 0
+        for row in new_rows:
+            file_path = (row.get("downloaded_path") or "").strip()
+            if not file_path or not os.path.exists(file_path):
+                continue
+
+            target_path = os.path.join(staging_dir, os.path.basename(file_path))
+            try:
+                os.symlink(file_path, target_path)
+            except OSError:
+                shutil.copy2(file_path, target_path)
+            staged_count += 1
+
+        if staged_count == 0:
+            print("No valid downloaded files available for parsing; skipping PDF parsing step.")
+            return
+
+        print(f"Running PDF parsing on {staged_count} newly downloaded files...")
+        process_pdf_directory(staging_dir, parquet_dir, limit=None)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -221,11 +254,22 @@ def main() -> None:
         default=None,
         help="Optional max number of newly downloaded files",
     )
+    parser.add_argument(
+        "--parquet-dir",
+        default=DEFAULT_PARQUET_DIR,
+        help="Output directory for parsed PDF text parquet files (default: pdf_parsing/parquet_files)",
+    )
+    parser.add_argument(
+        "--skip-pdf-parsing",
+        action="store_true",
+        help="Skip PDF text extraction step after downloads",
+    )
     args = parser.parse_args()
 
     root_dir = os.path.dirname(os.path.abspath(__file__))
     metadata_output_dir = os.path.join(root_dir, args.metadata_output_dir)
     download_dir = os.path.join(root_dir, args.download_dir)
+    parquet_dir = os.path.join(root_dir, args.parquet_dir)
     metadata_csv = (
         args.download_db_csv
         or args.metadata_csv
@@ -236,6 +280,7 @@ def main() -> None:
 
     os.makedirs(metadata_output_dir, exist_ok=True)
     os.makedirs(download_dir, exist_ok=True)
+    os.makedirs(parquet_dir, exist_ok=True)
 
     metadata_rows = load_csv_rows(metadata_csv)
     if not metadata_rows and os.path.exists(legacy_metadata_csv) and legacy_metadata_csv != metadata_csv:
@@ -363,6 +408,10 @@ def main() -> None:
     cumulative_rows.sort(key=lambda row: (row.get("agency_id", ""), row.get("ContentDocumentId", "")))
     write_csv_rows(metadata_csv, cumulative_rows)
 
+    # Parse new downloads to parquet text files
+    if not args.skip_pdf_parsing:
+        parse_new_downloads_to_parquet(new_rows, parquet_dir)
+
     # Write run-specific output (new rows only)
     write_csv_rows(run_output_csv, new_rows)
 
@@ -373,6 +422,7 @@ def main() -> None:
 
     print(f"Attempted new downloads: {attempted_new}")
     print(f"New files downloaded: {len(new_rows)}")
+    print(f"Parquet output directory: {parquet_dir}")
     print(f"Download database output: {metadata_csv}")
     print(f"Run metadata output (new files only): {run_output_csv}")
 

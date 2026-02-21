@@ -81,6 +81,26 @@ jobs:
             metadata_output/downloaded_files_database.csv
           if-no-files-found: error
 
+      - name: Detect latest parquet output
+        id: latest_parquet
+        run: |
+          if ls pdf_parsing/parquet_files/*.parquet >/dev/null 2>&1; then
+            latest=$(ls -t pdf_parsing/parquet_files/*.parquet | head -n 1)
+            echo "path=${latest}" >> "$GITHUB_OUTPUT"
+            echo "Latest parquet: ${latest}"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+            echo "No parquet output found for this run."
+          fi
+
+      - name: Upload latest parquet as artifact
+        if: ${{ steps.latest_parquet.outputs.path != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: download-pipeline-latest-parquet
+          path: ${{ steps.latest_parquet.outputs.path }}
+          if-no-files-found: error
+
       - name: Create PR with updated download database
         if: ${{ inputs.persist_database }}
         uses: peter-evans/create-pull-request@v8
