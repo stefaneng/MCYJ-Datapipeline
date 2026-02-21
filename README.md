@@ -47,7 +47,7 @@ You can run the same pipeline from GitHub:
 
 The workflow will:
 - run `run_full_pipeline.py` with your limit
-- create a PR committing pipeline outputs directly to the repo:
+- commit pipeline outputs directly to the triggering branch:
   - `metadata_output/downloaded_files_database.csv`
   - `metadata_output/latest_downloaded_metadata.csv`
   - new parquet files in `pdf_parsing/parquet_files/`
